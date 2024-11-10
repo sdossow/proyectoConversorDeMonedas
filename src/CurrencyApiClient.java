@@ -2,47 +2,58 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Map;
 
 public class CurrencyApiClient {
     private String apiKey;
     private String apiHttp;
     private HttpClient httpClient;
 
-    // Constructor para inicializar la API Key y la URL base
     public CurrencyApiClient(String apiKey) {
         this.apiKey = apiKey;
         this.apiHttp = "https://v6.exchangerate-api.com/v6/";
         this.httpClient = HttpClient.newHttpClient();
     }
 
-    // Método para realizar una solicitud GET a la API de tasas de cambio
-    public String getExchangeRates(String baseCurrency) throws Exception {
-        // Construir la URL con apiKey y baseCurrency
-        String requestUrl = apiHttp + apiKey + "/latest/" + baseCurrency;
+    // Método para realizar la solicitud GET y gestionar la respuesta
+    public void getExchangeRates(String baseCurrency) {
+        try {
+            String requestUrl = apiHttp + apiKey + "/latest/" + baseCurrency;
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(requestUrl))
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
 
-        // Crear la solicitud HTTP
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(requestUrl))
-                .GET()
-                .build();
+            // Enviar la solicitud y obtener HttpResponse
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // Enviar la solicitud y obtener la respuesta
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            // Procesar la respuesta HTTP
+            handleResponse(response);
 
-        // Verificar el estado de la respuesta y devolver el cuerpo
-        if (response.statusCode() == 200) {
-            return response.body();
-        } else {
-            throw new RuntimeException("Error en la solicitud: Código de estado " + response.statusCode());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    // Getters y Setters opcionales para la ApiKey
-    public String getApiKey() {
-        return apiKey;
-    }
+    // Método para manejar la respuesta HTTP
+    private void handleResponse(HttpResponse<String> response) {
+        // Obtener y mostrar el código de estado de la respuesta
+        int statusCode = response.statusCode();
+        System.out.println("Código de Estado: " + statusCode);
 
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
+        // Obtener y mostrar los encabezados de la respuesta
+        Map<String, java.util.List<String>> headers = response.headers().map();
+        System.out.println("Encabezados:");
+        headers.forEach((key, value) -> System.out.println(key + ": " + value));
+
+        // Obtener y mostrar el cuerpo de la respuesta
+        String responseBody = response.body();
+        System.out.println("Cuerpo de la Respuesta: " + responseBody);
+
+        // Aquí podrías procesar el JSON de `responseBody` usando Gson
+        // Ejemplo: deserializar el JSON en un objeto Java
+        // Gson gson = new Gson();
+        // ExchangeRateData data = gson.fromJson(responseBody, ExchangeRateData.class);
     }
 }
